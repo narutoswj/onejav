@@ -1,34 +1,41 @@
 # -*- coding: utf-8 -*-
-import sys
+
+"""This file works on Spider AV info and download Torrent file from OENJAV.COM"""
+
+#import sys
 #import datetime
 import time
 import os
-import pymongo
-import pyquery
+#import pymongo
+#import pyquery
 import requests
 
-from requests import Request, Session
+#from requests import Request
 from pyquery import PyQuery as pq
 
 # Declaration
-home_page_url = 'https://onejav.com'
-search_page_url = 'https://onejav.com/search/'
+HOME_PAGE_URL = 'https://onejav.com'
+SEARCH_PAGE_URL = 'https://onejav.com/search/'
+TORRENT_ROOT_PATH = '/media/joey/7f35cc7a-09cf-4e4d-a0b8-eb44b43df59f/Torrent/'
 
 # Search example
 # https://onejav.com/search/EBOD?page=1
 
-search_code = 'ABP'
-s=requests.Session()
+SEARCH_CODE = 'ABP'
+SESSION = requests.Session()
+
+if not os.path.exists(TORRENT_ROOT_PATH + SEARCH_CODE):
+    os.mkdir(TORRENT_ROOT_PATH + SEARCH_CODE)
 
 keep_searching = True
 searching_page_number = 1
-while (keep_searching):
-    r1= s.get(search_page_url + search_code + '?page=' + searching_page_number.__str__(), verify=False)
+while keep_searching:
+    r1 = SESSION.get(SEARCH_PAGE_URL + SEARCH_CODE + '?page=' + searching_page_number.__str__(), verify=False)
     print r1.content
 
     page_pyquery = pq(r1.content)
     #print page_pyquery
-    if (page_pyquery('h1').text() <> 'Not Found'):
+    if page_pyquery('h1').text() <> 'Not Found':
         container = page_pyquery('.card')
 
         for card in container:
@@ -38,7 +45,7 @@ while (keep_searching):
             release_date = pq(card)('.is-6').text()
             tags = pq(card)('.tag')
             description = pq(card)('.has-text-grey-dark').text()
-            download_url = home_page_url + pq(card)('.button').attr('href')
+            download_url = HOME_PAGE_URL + pq(card)('.button').attr('href')
 
             print title
             print coverpage_url
@@ -53,11 +60,12 @@ while (keep_searching):
             windows_line_ending = '\r\n'
             linux_line_ending = '\n'
 
-            download_torrent= s.get(download_url, verify=False)
-            #print download_torrent
-            f = open(title + '.torrent','wb')
-            f.write(download_torrent.content.replace(windows_line_ending, linux_line_ending))
-            f.close()
+            if not os.path.exists(TORRENT_ROOT_PATH + SEARCH_CODE + '/' + title + '.torrent'):
+                download_torrent = SESSION.get(download_url, verify=False)
+                #print download_torrent
+                f = open(TORRENT_ROOT_PATH + SEARCH_CODE + '/' + title + '.torrent', 'wb')
+                f.write(download_torrent.content.replace(windows_line_ending, linux_line_ending))
+                f.close()
             
     else:
         keep_searching = False
